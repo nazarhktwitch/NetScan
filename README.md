@@ -1,0 +1,2 @@
+# NetScan
+First Rust project
