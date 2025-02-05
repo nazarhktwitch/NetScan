@@ -6,6 +6,7 @@ use futures::stream::{self, StreamExt};
 use serde_json::json;
 use async_tls::TlsConnector;
 use http_types::Request;
+use clap::Parser;
 
 const MAX_CONCURRENT_SCANS: usize = 100;
 
@@ -15,6 +16,18 @@ struct ScanResult {
     status: String,
     headers: Option<String>,
     ssl_certificate: Option<String>,
+}
+
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+    /// Target address to scan
+    #[clap(short, long)]
+    target: String,
+
+    /// Comma-separated list of ports to scan
+    #[clap(short, long)]
+    ports: String,
 }
 
 async fn scan_port(address: &str, port: u16) -> ScanResult {
@@ -122,43 +135,49 @@ fn parse_ports(input: &str) -> Vec<u16> {
 }
 
 fn main() {
-    println!("Enter the target address:");
-    let mut target = String::new();
-    io::stdin().read_line(&mut target).expect("Failed to read input");
-    let target = target.trim();
-
-    println!("Enter comma-separated ports to scan (e.g., 80,443,8080):");
-    let mut ports_input = String::new();
-    io::stdin().read_line(&mut ports_input).expect("Failed to read input");
-    let ports = parse_ports(&ports_input);
-
-    if ports.is_empty() {
-        println!("No valid ports provided.");
-        return;
-    }
-
-    let results = task::block_on(scan_ports(target, ports));
-
-    for result in &results {
-        println!("Port {}: {}", result.port, result.status);
-        if let Some(headers) = &result.headers {
-            println!("Headers: {}", headers);
+    loop {
+        println!("Enter the target address (or type 'exit' to quit):");
+        let mut target = String::new();
+        io::stdin().read_line(&mut target).expect("Failed to read input");
+        let target = target.trim();
+        
+        if target.eq_ignore_ascii_case("exit") {
+            break;
         }
-        if let Some(ssl_certificate) = &result.ssl_certificate {
-            println!("SSL Certificate: {}", ssl_certificate);
+
+        println!("Enter comma-separated ports to scan (e.g., 80,443,8080):");
+        let mut ports_input = String::new();
+        io::stdin().read_line(&mut ports_input).expect("Failed to read input");
+        let ports = parse_ports(&ports_input);
+
+        if ports.is_empty() {
+            println!("No valid ports provided.");
+            continue;
         }
-    }
 
-    // Save reports
-    if let Err(e) = save_report_csv(&results, "scan_report.csv") {
-        eprintln!("Error saving CSV report: {}", e);
-    } else {
-        println!("CSV report saved as scan_report.csv");
-    }
+        let results = task::block_on(scan_ports(target, ports));
 
-    if let Err(e) = save_report_json(&results, "scan_report.json") {
-        eprintln!("Error saving JSON report: {}", e);
-    } else {
-        println!("JSON report saved as scan_report.json");
+        for result in &results {
+            println!("Port {}: {}", result.port, result.status);
+            if let Some(headers) = &result.headers {
+                println!("Headers: {}", headers);
+            }
+            if let Some(ssl_certificate) = &result.ssl_certificate {
+                println!("SSL Certificate: {}", ssl_certificate);
+            }
+        }
+
+        // Save reports
+        if let Err(e) = save_report_csv(&results, "scan_report.csv") {
+            eprintln!("Error saving CSV report: {}", e);
+        } else {
+            println!("CSV report saved as scan_report.csv");
+        }
+
+        if let Err(e) = save_report_json(&results, "scan_report.json") {
+            eprintln!("Error saving JSON report: {}", e);
+        } else {
+            println!("JSON report saved as scan_report.json");
+        }
     }
 }
