@@ -29,7 +29,7 @@ NetScan is a SIMPLIEST tool for port scanning. It allows you to scan ports on re
 2. Build the project:
    
    ```bash
-   cargo build
+   cargo build --release
    ```
 
 4. The compiled binary will be available in the `target/debug/` directory.
