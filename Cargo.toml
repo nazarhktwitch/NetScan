@@ -1,22 +1,22 @@
 [package]
 name = "NetScan"
-version = "0.0.4"
+version = "0.0.6"
 edition = "2021"
 
 [dependencies]
+env_logger = "0.11.6"
+async-std = { version = "1.12", features = ["attributes"] }
+async-tls = "0.13.0"
+async-h1 = "2.3"
 winapi = { version = "0.3", features = ["consoleapi"] }
 egui = "0.31.0"
 eframe = "0.31.0"
-async-std = "1.10"
 futures = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-async-tls = "0.13.0"
-async-h1 = "2.3.4"
 http-types = "2.12"
-clap = { version = "4.5.28", features = ["derive"] }
+chrono = "0.4"
 log = "0.4"
-env_logger = "0.11.6"
 
 [profile.release]
 lto = true
